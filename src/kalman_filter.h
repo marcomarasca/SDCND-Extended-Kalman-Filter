@@ -46,7 +46,7 @@ public:
       Eigen::MatrixXd &H_in, Eigen::MatrixXd &R_in, Eigen::MatrixXd &Q_in);
 
   /**
-   * Prediction Predicts the state and the state covariance
+   * Predicts the state and the state covariance
    * using the process model
    * @param delta_T Time between k and k+1 in s
    */
@@ -63,6 +63,19 @@ public:
    * @param z The measurement at k+1
    */
   void UpdateEKF(const Eigen::VectorXd &z);
+
+private:
+
+  /**
+   * Identity matrix
+   */
+  Eigen::MatrixXd _I;
+
+  /**
+   * Given the error estimate updates the state
+   * @param y The error estimate
+   */
+  void _UpdateMeasurement(const Eigen::VectorXd &y);
 
 };
 
