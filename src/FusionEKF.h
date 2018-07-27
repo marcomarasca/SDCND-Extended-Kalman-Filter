@@ -33,21 +33,31 @@ public:
 
 private:
   // check whether the tracking toolbox was initialized or not (first measurement)
-  bool is_initialized_;
+  bool _is_initialized;
 
   // previous timestamp
-  long long previous_timestamp_;
+  long long _previous_timestamp;
 
   // tool object used to compute Jacobian and RMSE
-  Tools tools;
+  Tools _tools;
 
-  Eigen::MatrixXd R_laser_;
-  Eigen::MatrixXd R_radar_;
-  Eigen::MatrixXd H_laser_;
-  Eigen::MatrixXd Hj_;
+  // Laser measurement covariance matrix
+  Eigen::MatrixXd _R_laser;
+  // Radar measurement covariance matrix
+  Eigen::MatrixXd _R_radar;
+  // Laser measurement matrix
+  Eigen::MatrixXd _H_laser;
 
-  float noise_ax;
-  float noise_ay;
+  // Noise on the x axes
+  float _noise_ax;
+  // Noise on the y axes
+  float _noise_ay;
+
+  /**
+   * Initilizes the kalman filter using the given measurement package, if the data comes from a radar
+   * sensor converts the state coordinates from polar to cartesian.
+   */ 
+  void _InitializeFilter(const MeasurementPackage &measurement_pack);
 };
 
 #endif /* FusionEKF_H_ */
