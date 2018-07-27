@@ -1,11 +1,71 @@
-# Extended Kalman Filter Project Starter Code
-Self-Driving Car Engineer Nanodegree Program
+# Extended Kalman Filter
+[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-In this project you will utilize a kalman filter to estimate the state of a moving object of interest with noisy lidar and radar measurements. Passing the project requires obtaining RMSE values that are lower than the tolerance outlined in the project rubric. 
+[//]: # (Image References)
 
-This project involves the Term 2 Simulator which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
+[dataset_1_gif]: ./images/dataset1.gif "Tracking on the first dataset"
+[dataset_2_gif]: ./images/dataset2.gif "Tracking on the second (reversed) dataset"
 
-This repository includes two files that can be used to set up and install [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. Please see [this concept in the classroom](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/16cf4a78-4fc7-49e1-8621-3450ca938b77) for the required version and installation scripts.
+![alt text][dataset_1_gif]
+
+Overview
+---
+
+This repository contains a C++ implementation of the (extended) kalman filter used to estimate the state of a moving object of interest through measurements coming from with both lidar and radar sensors. The measurements comes from a simulated environment thanks to the [Udacity Simulator](https://github.com/udacity/self-driving-car-sim) and are fed to the program through [WebSockets](https://en.wikipedia.org/wiki/WebSocket) messages. The [main](./src/main.cpp) file process the incoming messages and parse the type of measurement that is then processed by the [FusionEKF](./src/FusionEKF.cpp) class.
+
+Each message contains the type of sensor measurement (LASER or RADAR), the measurement data and a timestamp, plus the ground truth values (e.g. real values of the position of the tracked object). The messages are encoded as JSON objects and the "sensor_measurement" attribute will contain the raw data from the sensor, the data is encoded as a space separated values string, whose first character encodes the type of measurement, **L** for Laser and **R** for Radar. The values following are the data plus ground truth.
+
+#### Radar
+
+```sensor_type, rho_measured, phi_measured, rhodot_measured, timestamp, x_groundtruth, y_groundtruth, vx_groundtruth, vy_groundtruth, yaw_groundtruth, yawrate_groundtruth```
+
+sensor_type is **R**
+
+#### Lidar
+
+```sensor_type, x_measured, y_measured, timestamp, x_groundtruth, y_groundtruth, vx_groundtruth, vy_groundtruth, yaw_groundtruth, yawrate_groundtruth```
+
+sensor_type is **L**
+
+The program process this data and sends back a JSON object containing the estimated position and the root mean squared error values for the position and velocity (computed using the estimation and ground truth):
+
+```
+["estimate_x"] <= Estimated position x
+["estimate_y"] <= Estimated position y
+["rmse_x"]
+["rmse_y"]
+["rmse_vx"]
+["rmse_vy"]
+```
+
+As we can see the coordinates coming from the 2 sensors are different in the type of representation, while the lidar outputs cartesian coordinates, the radar provides polar coordinates. This is where the extended kalman filter comes into place where the non-linear data is used (for the radar), the extended version uses a linear approximation for the computation.
+
+Some (RMSE) results from various runs:
+
+##### Dataset 1, Radar + Lidar
+
+RMSE (x, y, vx, vy): 0.0964, 0.0853, 0.4154, 0.4316
+
+##### Dataset 2, Radar + Lidar
+
+RMSE (x, y, vx, vy): 0.0727, 0.0968, 0.4893, 0.5078
+
+##### Dataset 1, Radar
+
+RMSE (x, y, vx, vy): 0.1915, 0.2798, 0.5221, 0.6609
+
+##### Dataset 1, Lidar
+
+RMSE (x, y, vx, vy): 0.1222, 0.0984, 0.5511, 0.4604
+
+As expected using both sensors together leads to a lower error in the estimation of both position and velocity.
+
+Getting Started
+---
+
+In order to run the program you need the simulator provided by [Udacity](https://www.udacity.com/) which can be downloaded [here](https://github.com/udacity/self-driving-car-sim/releases)
+
+This repository includes two files that can be used to set up and install [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) for either Linux or Mac systems. For windows you can use either Docker, VMware, or even better [Windows 10 Bash on Ubuntu](https://www.howtogeek.com/249966/how-to-install-and-use-the-linux-bash-shell-on-windows-10/) to install uWebSocketIO. The version compatible with the simulator is the uWebSocketIO branch **e94b6e1**.
 
 Once the install for uWebSocketIO is complete, the main program can be built and run by doing the following from the project top directory.
 
@@ -15,32 +75,11 @@ Once the install for uWebSocketIO is complete, the main program can be built and
 4. make
 5. ./ExtendedKF
 
-Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
+Now the Udacity simulator can be run selecting the EKF/UKF project, after the dataset selection press start and see the application in action.
 
-Note that the programs that need to be written to accomplish the project are src/FusionEKF.cpp, src/FusionEKF.h, kalman_filter.cpp, kalman_filter.h, tools.cpp, and tools.h
+![alt text][dataset_2_gif]
 
-The program main.cpp has already been filled out, but feel free to modify it.
-
-Here is the main protcol that main.cpp uses for uWebSocketIO in communicating with the simulator.
-
-
-INPUT: values provided by the simulator to the c++ program
-
-["sensor_measurement"] => the measurement that the simulator observed (either lidar or radar)
-
-
-OUTPUT: values provided by the c++ program to the simulator
-
-["estimate_x"] <= kalman filter estimated position x
-["estimate_y"] <= kalman filter estimated position y
-["rmse_x"]
-["rmse_y"]
-["rmse_vx"]
-["rmse_vy"]
-
----
-
-## Other Important Dependencies
+#### Other Dependencies
 
 * cmake >= 3.5
   * All OSes: [click here for installation instructions](https://cmake.org/install/)
@@ -53,77 +92,118 @@ OUTPUT: values provided by the c++ program to the simulator
   * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
   * Windows: recommend using [MinGW](http://www.mingw.org/)
 
-## Basic Build Instructions
+Environment Setup
+---
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make` 
-   * On windows, you may need to run: `cmake .. -G "Unix Makefiles" && make`
-4. Run it: `./ExtendedKF `
+This project was developed under windows using the windows subsystem for linux ([WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10)) with Ubuntu Bash 16.04 together with [Visual Studio Code](https://code.visualstudio.com/).
 
-## Editor Settings
+The steps to setup the environment under mac, linux or windows (WSL) are more or less the same:
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+- Review the above dependencies
+- Clone the repo and run the appropriate script (./install-ubuntu.sh under WSL and linux and ./install-mac.sh under mac), this should install [uWebSocketIO](https://github.com/uWebSockets/uWebSockets) from the branch **e94b6e1**
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+Under windows (WSL) and linux you can make a clean installation as follows:
 
-## Code Style
+1. ```sudo apt-get update```
+2. ```sudo apt-get install git```
+3. ```sudo apt-get install cmake```
+4. ```sudo apt-get install openssl```
+5. ```sudo apt-get install libssl-dev```
+6. ```git clone https://github.com/Az4z3l/CarND-Extended-Kalman-Filter```
+7. ```sudo rm /usr/lib/libuWS.so```
+8. ```./install-ubuntu.sh```
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+#### Debugging with VS Code
 
-## Generating Additional Data
+Since I developed this project using WSL and Visual Studio Code it was very useful for me to setup a debugging pipeline. VS Code comes with a official Microsoft cpp extension that can be downloaded directly from the marketplace: https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools. After the installation there are a few things to setup in order to make it work with the subsystem for linux, personally I went with the default Ubuntu distribution.
 
-This is optional!
+For the following setup I assume that the repository was cloned in **D:/Dev/CarND-Extended-Kalman-Filter/**.
 
-If you'd like to generate your own radar and lidar data, see the
-[utilities repo](https://github.com/udacity/CarND-Mercedes-SF-Utilities) for
-Matlab scripts that can generate additional data.
+##### Setup the language server (for IntelliSense)
 
-## Project Instructions and Rubric
+From the official documentation https://github.com/Microsoft/vscode-cpptools/blob/master/Documentation/LanguageServer/Windows%20Subsystem%20for%20Linux.md: 
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+Simply Crtl+P and select "C/Cpp: Edit Configurations", this will create a c_cpp_properties.json file that can be configured as follows:
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project resources page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/382ebfd6-1d55-4487-84a5-b6a5a4ba1e47)
-for instructions and the project rubric.
+```json
+{
+    "name": "WSL",
+    "intelliSenseMode": "clang-x64",
+    "compilerPath": "/usr/bin/gcc",
+    "includePath": [
+        "${workspaceFolder}"
+    ],
+    "defines": [],
+    "browse": {
+        "path": [
+            "${workspaceFolder}"
+        ],
+        "limitSymbolsToIncludedHeaders": true,
+        "databaseFilename": ""
+    },
+    "cStandard": "c11",
+    "cppStandard": "c++17"
+}
+```
 
-## Hints and Tips!
+##### Setup the Debugger
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-* Students have reported rapid expansion of log files when using the term 2 simulator.  This appears to be associated with not being connected to uWebSockets.  If this does occur,  please make sure you are conneted to uWebSockets. The following workaround may also be effective at preventing large log files.
+From the official documenation https://github.com/Microsoft/vscode-cpptools/blob/master/Documentation/Debugger/gdb/Windows%20Subsystem%20for%20Linux.md:
 
-    + create an empty log file
-    + remove write permissions so that the simulator can't write to log
- * Please note that the ```Eigen``` library does not initialize ```VectorXd``` or ```MatrixXd``` objects with zeros upon creation.
+First install gdb in the WSL:
 
-## Call for IDE Profiles Pull Requests
+```
+sudo apt install gdb
+```
 
-Help your fellow students!
+Then simply create a lunch configuration from VS Code: "Debug" -> "Add Configuration.." and setup the launch.json as follows:
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/mnt/d/Dev/CarND-Extended-Kalman-Filter/build/ExtendedKF",
+            "args": ["-fThreading"],
+            "stopAtEntry": false,
+            "cwd": "/mnt/d/Dev/CarND-Extended-Kalman-Filter/build/",
+            "environment": [],
+            "externalConsole": true,
+            "windows": {
+                "MIMode": "gdb",
+                "setupCommands": [
+                    {
+                        "description": "Enable pretty-printing for gdb",
+                        "text": "-enable-pretty-printing",
+                        "ignoreFailures": true
+                    }
+                ]
+            },
+            "pipeTransport": {
+                "pipeCwd": "",
+                "pipeProgram": "c:\\Windows\\System32\\bash.exe",
+                "pipeArgs": ["-c"],
+                "debuggerPath": "/usr/bin/gdb"
+            },
+            "sourceFileMap": {
+                "/mnt/d": "d:\\"
+            }
+        }
+    ]
+}
+```
 
-However! We'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+Note how the program is mapped directly into the file system of the WSL and piped through bash.exe (the paths are relative to the WSL environment).
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+Now you are ready to debug the application directly from VS Code (e.g. setup a breakpoint and press F5) :)
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
 
-Regardless of the IDE used, every submitted project must
-still be compilable with cmake and make.
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+
+
+
+
 
