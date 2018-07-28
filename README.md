@@ -69,11 +69,12 @@ This repository includes two files that can be used to set up and install [uWebS
 
 Once the install for uWebSocketIO is complete, the main program can be built and run by doing the following from the project top directory.
 
-1. mkdir build
-2. cd build
-3. cmake ..
-4. make
-5. ./ExtendedKF
+1. ```mkdir build```
+2. ```cd build```
+3. ```cmake .. && make```
+4. ```./ExtendedKF```
+
+Note that to compile the program with debug symbols you can supply the flag to cmake: ```cmake -DCMAKE_BUILD_TYPE=Debug .. && make```.
 
 Now the Udacity simulator can be run selecting the EKF/UKF project, after the dataset selection press start and see the application in action.
 
@@ -198,7 +199,11 @@ Then simply create a lunch configuration from VS Code: "Debug" -> "Add Configura
 
 Note how the program is mapped directly into the file system of the WSL and piped through bash.exe (the paths are relative to the WSL environment).
 
-Now you are ready to debug the application directly from VS Code (e.g. setup a breakpoint and press F5) :)
+Now you are ready to debug the application directly from VS Code, simply compile the application from within the WSL with the debug symbols:
+
+```cmake -DCMAKE_BUILD_TYPE=Debug .. && make```
+
+And run the debugger from VS Code (e.g. F5) :)
 
 
 
