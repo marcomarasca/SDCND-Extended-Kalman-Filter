@@ -185,7 +185,7 @@ Then simply create a lunch configuration from VS Code: "Debug" -> "Add Configura
             },
             "pipeTransport": {
                 "pipeCwd": "",
-                "pipeProgram": "c:\\Windows\\System32\\bash.exe",
+                "pipeProgram": "c:\\windows\\sysnative\\bash.exe",
                 "pipeArgs": ["-c"],
                 "debuggerPath": "/usr/bin/gdb"
             },
